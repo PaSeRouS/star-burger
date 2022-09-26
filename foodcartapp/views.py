@@ -63,7 +63,6 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    # print(type(request.data['products']))
     result = []
 
     if request.method == 'POST':
