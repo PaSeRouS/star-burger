@@ -5,7 +5,9 @@ from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
 from rest_framework.serializers import CharField
+from rest_framework.serializers import IntegerField
 from rest_framework.serializers import ListField
 from rest_framework.serializers import Serializer
 from rest_framework.serializers import ValidationError
@@ -13,7 +15,7 @@ from rest_framework.serializers import ValidationError
 from .models import Order, OrderItem, Product
 
 
-class OrderSerializer(Serializer):
+class OrderDeserializer(Serializer):
     products = ListField()
     firstname = CharField()
     lastname = CharField()
@@ -64,6 +66,17 @@ class OrderSerializer(Serializer):
             raise ValidationError(
                 '\'phonenumber\': Введен некорректный номер телефона'
             )
+
+
+class OrderSerializer(Serializer):
+    id = IntegerField(read_only=True)
+    firstname = CharField(max_length=50)
+    lastname = CharField(max_length=50)
+    phonenumber = CharField()
+    address = CharField(max_length=100)
+
+    # def create(self, validated_data):
+    #     return Order.objects.create(**validated_data)
 
 
 def banners_list_api(request):
@@ -120,8 +133,10 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
+    content = {}
+
     if request.method == 'POST':
-        serializer = OrderSerializer(data=request.data)
+        serializer = OrderDeserializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         order = Order.objects.create(
@@ -139,5 +154,8 @@ def register_order(request):
                 product=product,
                 quantity=order_position['quantity']
             )
+
+        serializer = OrderSerializer(order)
+        content = JSONRenderer().render(serializer.data)
         
-    return Response([])
+    return Response(content)
