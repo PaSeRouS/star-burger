@@ -1,4 +1,5 @@
 from json import loads
+from phonenumbers import is_possible_number, parse
 
 from django.http import JsonResponse
 from django.templatetags.static import static
@@ -71,25 +72,135 @@ def register_order(request):
         try:
             order_positions = request.data['products']
         except KeyError:
+            result.append({
+                'error': '\'products\': Обязательное поле'
+            })
             error = True
-        print('1', error)
+
+        try:
+            firstname = request.data['firstname']
+        except KeyError:
+            result.append({
+                'error': '\'firstname\': Обязательное поле'
+            })
+            error = True
+
+        try:
+            lastname = request.data['lastname']
+        except KeyError:
+            result.append({
+                'error': '\'lastname\': Обязательное поле'
+            })
+            error = True
+
+        try:
+            phonenumber = request.data['phonenumber']
+        except KeyError:
+            result.append({
+                'error': '\'phonenumber\': Обязательное поле'
+            })
+            error = True
+
+        try:
+            address = request.data['address']
+        except KeyError:
+            result.append({
+                'error': '\'address\': Обязательное поле'
+            })
+            error = True
+
         if not error:
-            print('2', error)
-            print(type(request.data['products']))
             if type(request.data['products']) != list:
+                result.append({
+                    'error': 'products: Ожидался list со значениями, но был получен \'str\''
+                })
+
                 error = True
 
-            print('3', error)
+            if type(request.data['firstname']) != str:
+                result.append({
+                    'error': '\'firstname\': Не является действительной строкой'
+                })
+
+                error = True
+
+            if type(request.data['lastname']) != str:
+                result.append({
+                    'error': '\'lastname\': Не является действительной строкой'
+                })
+
+                error = True
+
+            if type(request.data['address']) != str:
+                result.append({
+                    'error': '\'address\': Не является действительной строкой'
+                })
+
+                error = True
+
             if not request.data['products']:
+                result.append({
+                    'error': '\'products\': Этот список не может быть пустым'
+                })
+
                 error = True
 
-        print('4', error)
+            if not request.data['firstname']:
+                result.append({
+                    'error': '\'firstname\': Это поле не может быть пустым'
+                })
+
+                error = True
+
+            if not request.data['lastname']:
+                result.append({
+                    'error': '\'lastname\': Это поле не может быть пустым'
+                })
+
+                error = True
+
+            if not request.data['phonenumber']:
+                result.append({
+                    'error': '\'phonenumber\': Это поле не может быть пустым'
+                })
+
+                error = True
+
+            if not request.data['address']:
+                result.append({
+                    'error': '\'address\': Это поле не может быть пустым'
+                })
+
+                error = True
+
+            try:
+                for order_position in order_positions:
+                    product_id = order_position['product']
+                    product = Product.objects.get(pk=product_id)
+            except Product.DoesNotExist:
+                result.append({
+                    'error': f'\'products\': Недопустимый первичный ключ \'{product_id}\''
+                })
+
+                error = True
+
+            if phonenumber:
+                parsed_phonenumber = parse(phonenumber)
+                if not is_possible_number(parsed_phonenumber):
+
+                    result.append({
+                        'error': '\'phonenumber\': Введен некорректный номер телефона'
+                    })
+
+                    error = True
+
+
         if not error:
             order = Order.objects.create(
-                address=request.data['address'],
-                firstname=request.data['firstname'],
-                lastname=request.data['lastname'],
-                phonenumber=request.data['phonenumber']
+                address=address,
+                firstname=firstname,
+                lastname=lastname,
+                phonenumber=phonenumber
             )
 
             for order_position in order_positions:
@@ -100,11 +211,5 @@ def register_order(request):
                     product=product,
                     quantity=order_position['quantity']
                 )
-        else:
-            error = {
-                'error': 'products key not presented or not list'
-            }
-            
-            result.append(error)
         
     return Response(result)
