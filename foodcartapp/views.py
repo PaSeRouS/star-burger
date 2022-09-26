@@ -5,8 +5,65 @@ from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.serializers import CharField
+from rest_framework.serializers import ListField
+from rest_framework.serializers import Serializer
+from rest_framework.serializers import ValidationError
 
 from .models import Order, OrderItem, Product
+
+
+class OrderSerializer(Serializer):
+    products = ListField()
+    firstname = CharField()
+    lastname = CharField()
+    phonenumber = CharField()
+    address = CharField()
+
+    def validate_products(self, value):
+        if not value:
+            raise ValidationError(
+                '\'products\': Этот список не может быть пустым'
+            )
+
+        try:
+            for position in value:
+                product_id = position['product']
+                product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            raise ValidationError(
+                f'\'products\': Недопустимый первичный ключ \'{product_id}\''
+            )
+
+    def validate_firstname(self, value):
+        if not value:
+            raise ValidationError(
+                '\'firstname\': Это поле не может быть пустым'
+            )
+
+    def validate_lastname(self, value):
+        if not value:
+            raise ValidationError(
+                '\'lastname\': Это поле не может быть пустым'
+            )
+
+    def validate_address(self, value):
+        if not value:
+            raise ValidationError(
+                '\'address\': Это поле не может быть пустым'
+            )
+
+    def validate_phonenumber(self, value):
+        if not value:
+            raise ValidationError(
+                '\'phonenumber\': Это поле не может быть пустым'
+            )
+
+        phonenumber = parse(value)
+        if not is_possible_number(phonenumber):
+            raise ValidationError(
+                '\'phonenumber\': Введен некорректный номер телефона'
+            )
 
 
 def banners_list_api(request):
@@ -63,152 +120,24 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    result = []
-
     if request.method == 'POST':
-        error = False
+        serializer = OrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        try:
-            order_positions = request.data['products']
-        except KeyError:
-            result.append({
-                'error': '\'products\': Обязательное поле'
-            })
-            error = True
+        order = Order.objects.create(
+            address=request.data['address'],
+            firstname=request.data['firstname'],
+            lastname=request.data['lastname'],
+            phonenumber=request.data['phonenumber']
+        )
 
-        try:
-            firstname = request.data['firstname']
-        except KeyError:
-            result.append({
-                'error': '\'firstname\': Обязательное поле'
-            })
-            error = True
+        for order_position in request.data['products']:
+            product = Product.objects.get(pk=order_position['product'])
 
-        try:
-            lastname = request.data['lastname']
-        except KeyError:
-            result.append({
-                'error': '\'lastname\': Обязательное поле'
-            })
-            error = True
-
-        try:
-            phonenumber = request.data['phonenumber']
-        except KeyError:
-            result.append({
-                'error': '\'phonenumber\': Обязательное поле'
-            })
-            error = True
-
-        try:
-            address = request.data['address']
-        except KeyError:
-            result.append({
-                'error': '\'address\': Обязательное поле'
-            })
-            error = True
-
-        if not error:
-            if type(request.data['products']) != list:
-                result.append({
-                    'error': 'products: Ожидался list со значениями, но был получен \'str\''
-                })
-
-                error = True
-
-            if type(request.data['firstname']) != str:
-                result.append({
-                    'error': '\'firstname\': Не является действительной строкой'
-                })
-
-                error = True
-
-            if type(request.data['lastname']) != str:
-                result.append({
-                    'error': '\'lastname\': Не является действительной строкой'
-                })
-
-                error = True
-
-            if type(request.data['address']) != str:
-                result.append({
-                    'error': '\'address\': Не является действительной строкой'
-                })
-
-                error = True
-
-            if not request.data['products']:
-                result.append({
-                    'error': '\'products\': Этот список не может быть пустым'
-                })
-
-                error = True
-
-            if not request.data['firstname']:
-                result.append({
-                    'error': '\'firstname\': Это поле не может быть пустым'
-                })
-
-                error = True
-
-            if not request.data['lastname']:
-                result.append({
-                    'error': '\'lastname\': Это поле не может быть пустым'
-                })
-
-                error = True
-
-            if not request.data['phonenumber']:
-                result.append({
-                    'error': '\'phonenumber\': Это поле не может быть пустым'
-                })
-
-                error = True
-
-            if not request.data['address']:
-                result.append({
-                    'error': '\'address\': Это поле не может быть пустым'
-                })
-
-                error = True
-
-            try:
-                for order_position in order_positions:
-                    product_id = order_position['product']
-                    product = Product.objects.get(pk=product_id)
-            except Product.DoesNotExist:
-                result.append({
-                    'error': f'\'products\': Недопустимый первичный ключ \'{product_id}\''
-                })
-
-                error = True
-
-            if phonenumber:
-                parsed_phonenumber = parse(phonenumber)
-                if not is_possible_number(parsed_phonenumber):
-
-                    result.append({
-                        'error': '\'phonenumber\': Введен некорректный номер телефона'
-                    })
-
-                    error = True
-
-
-        if not error:
-            order = Order.objects.create(
-                address=address,
-                firstname=firstname,
-                lastname=lastname,
-                phonenumber=phonenumber
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=order_position['quantity']
             )
-
-            for order_position in order_positions:
-                product = Product.objects.get(pk=order_position['product'])
-
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    quantity=order_position['quantity']
-                )
         
-    return Response(result)
+    return Response([])
