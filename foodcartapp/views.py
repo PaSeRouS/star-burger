@@ -62,22 +62,49 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    print(request.data)
+    # print(type(request.data['products']))
+    result = []
+
     if request.method == 'POST':
-        order = Order.objects.create(
-            address=request.data['address'],
-            firstname=request.data['firstname'],
-            lastname=request.data['lastname'],
-            phonenumber=request.data['phonenumber']
-        )
+        error = False
 
-        for order_position in request.data['products']:
-            product = Product.objects.get(pk=order_position['product'])
+        try:
+            order_positions = request.data['products']
+        except KeyError:
+            error = True
+        print('1', error)
+        if not error:
+            print('2', error)
+            print(type(request.data['products']))
+            if type(request.data['products']) != list:
+                error = True
 
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=order_position['quantity']
+            print('3', error)
+            if not request.data['products']:
+                error = True
+
+        print('4', error)
+        if not error:
+            order = Order.objects.create(
+                address=request.data['address'],
+                firstname=request.data['firstname'],
+                lastname=request.data['lastname'],
+                phonenumber=request.data['phonenumber']
             )
+
+            for order_position in order_positions:
+                product = Product.objects.get(pk=order_position['product'])
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=order_position['quantity']
+                )
+        else:
+            error = {
+                'error': 'products key not presented or not list'
+            }
+            
+            result.append(error)
         
-    return Response([])
+    return Response(result)
