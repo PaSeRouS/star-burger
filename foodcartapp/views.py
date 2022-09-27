@@ -151,6 +151,7 @@ def register_order(request):
 
             OrderItem.objects.create(
                 order=order,
+                price=product.price,
                 product=product,
                 quantity=order_position['quantity']
             )
