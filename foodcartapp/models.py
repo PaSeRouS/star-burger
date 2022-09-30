@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Sum, F
 from django.core.validators import MinValueValidator
+from django.utils.translation import gettext_lazy
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -130,8 +131,39 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(price_total=Sum(F('items__price') * F('items__quantity')))
 
 
+class OrderStatus(models.Model):
+    ACCEPTED = 'ACCE'
+    ASSEMBLE = 'ASSE'
+    COURIER = 'COUR'
+    COMPLETE = 'COMP'
+    ORDER_STATUS_CHOICES = [
+        (ACCEPTED, 'Принят, ожидает подтверждение'),
+        (ASSEMBLE, 'В сборке в ресторане'),
+        (COURIER, 'У курьера'),
+        (COMPLETE, 'Выполнен'),
+    ]
+    order_status = models.CharField(
+        max_length=4,
+        choices=ORDER_STATUS_CHOICES,
+        default=ACCEPTED,
+    )
+
+    class Meta:
+        verbose_name = 'Статус заказа'
+        verbose_name_plural = 'Статусы заказов'
+
+    def __str__(self):
+        return self.order_status
+
+
 class Order(models.Model):
     objects = OrderQuerySet().as_manager()
+
+    class Status(models.IntegerChoices):
+        NEW = 0, gettext_lazy('Принят, ожидает подтверждение')
+        ASSEMBLE = 1, gettext_lazy('В сборке у ресторана')
+        COURIER = 2, gettext_lazy('У курьера')
+        FULFILLED = 3, gettext_lazy('Выполнен')
 
     address = models.CharField(
         'Адрес',
@@ -147,6 +179,12 @@ class Order(models.Model):
     )
     phonenumber = PhoneNumberField(
         'Мобильный номер',
+        db_index=True
+    )
+    status = models.SmallIntegerField(
+        'Статус заказа',
+        choices=Status.choices,
+        default=Status.NEW,
         db_index=True
     )
 

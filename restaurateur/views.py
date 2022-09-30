@@ -96,13 +96,15 @@ def view_orders(request):
     orders = Order.objects.price_sum()
 
     for order in orders:
-        orders_data.append({
-            'id': order.id,
-            'price': order.price_total,
-            'client': f'{order.firstname} {order.lastname}',
-            'phonenumber': order.phonenumber,
-            'address': order.address
-        })
+        if order.status != 3:
+            orders_data.append({
+                'id': order.id,
+                'price': order.price_total,
+                'client': f'{order.firstname} {order.lastname}',
+                'phonenumber': order.phonenumber,
+                'address': order.address,
+                'status': order.get_status_display()
+            })
 
     context = {
         'order_items': orders_data
