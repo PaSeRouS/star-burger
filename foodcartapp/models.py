@@ -131,31 +131,6 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(price_total=Sum(F('items__price') * F('items__quantity')))
 
 
-class OrderStatus(models.Model):
-    ACCEPTED = 'ACCE'
-    ASSEMBLE = 'ASSE'
-    COURIER = 'COUR'
-    COMPLETE = 'COMP'
-    ORDER_STATUS_CHOICES = [
-        (ACCEPTED, 'Принят, ожидает подтверждение'),
-        (ASSEMBLE, 'В сборке в ресторане'),
-        (COURIER, 'У курьера'),
-        (COMPLETE, 'Выполнен'),
-    ]
-    order_status = models.CharField(
-        max_length=4,
-        choices=ORDER_STATUS_CHOICES,
-        default=ACCEPTED,
-    )
-
-    class Meta:
-        verbose_name = 'Статус заказа'
-        verbose_name_plural = 'Статусы заказов'
-
-    def __str__(self):
-        return self.order_status
-
-
 class Order(models.Model):
     objects = OrderQuerySet().as_manager()
 
@@ -186,6 +161,12 @@ class Order(models.Model):
         choices=Status.choices,
         default=Status.NEW,
         db_index=True
+    )
+    comment = models.TextField(
+        'Комментарий',
+        max_length=200,
+        blank=True,
+        null=True
     )
 
     class Meta:
