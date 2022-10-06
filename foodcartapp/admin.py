@@ -119,6 +119,7 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderItemInline
     ]
+    readonly_fields = ['registered_at']
 
     def response_post_save_change(self, request, obj):
         '''redirect back if request comes from manager view'''
