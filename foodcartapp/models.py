@@ -141,6 +141,10 @@ class Order(models.Model):
         COURIER = 2, gettext_lazy('У курьера')
         FULFILLED = 3, gettext_lazy('Выполнен')
 
+    class PaymentMethod(models.IntegerChoices):
+        CASH = 0, gettext_lazy('Наличными')
+        ONLINE = 1, gettext_lazy('Онлайн')
+
     address = models.CharField(
         'Адрес',
         max_length=100
@@ -161,6 +165,12 @@ class Order(models.Model):
         'Статус заказа',
         choices=Status.choices,
         default=Status.NEW,
+        db_index=True
+    )
+    payment_method = models.SmallIntegerField(
+        'Способ оплаты',
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.CASH,
         db_index=True
     )
     comment = models.TextField(
