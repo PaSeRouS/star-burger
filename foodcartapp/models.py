@@ -1,5 +1,7 @@
+from collections import defaultdict
+
 from django.db import models
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Prefetch
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from django.utils.translation import gettext_lazy
@@ -132,18 +134,61 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(price_total=Sum(F('items__price') * F('items__quantity')))
 
 
+    def with_restaurants(self):
+        orders = self.prefetch_related(
+            Prefetch(
+                'items',
+                queryset=OrderItem.objects.select_related('product')
+            )
+        )
+
+        menu_items = RestaurantMenuItem.objects.select_related(
+            'restaurant',
+            'product'
+        ).filter(
+            availability=True,
+        )
+
+        restaurants_by_items = defaultdict(list)
+
+        for menu_item in menu_items:
+            restaurants_by_items[menu_item.product.id].append(
+                menu_item.restaurant
+            )
+
+        for order in orders:
+            order_restaurants_by_items = [
+                restaurants_by_items[order_item.product.id]
+                for order_item in order.items.all()
+            ]
+            order.restaurants = list(
+                set.intersection(*[
+                    set(list) for list in order_restaurants_by_items
+                ])
+            )
+
+        return orders
+
+
 class Order(models.Model):
     objects = OrderQuerySet().as_manager()
 
-    class Status(models.IntegerChoices):
-        NEW = 0, gettext_lazy('Принят, ожидает подтверждение')
-        ASSEMBLE = 1, gettext_lazy('В сборке у ресторана')
-        COURIER = 2, gettext_lazy('У курьера')
-        FULFILLED = 3, gettext_lazy('Выполнен')
-
-    class PaymentMethod(models.IntegerChoices):
-        CASH = 0, gettext_lazy('Наличными')
-        ONLINE = 1, gettext_lazy('Онлайн')
+    NEW = 'new'
+    ASSEMBLE = 'assemble'
+    COURIER = 'courier'
+    FULFILLED = 'fulfilled'
+    STATUS_CHOICES = [
+        (NEW, 'Принят, ожидает подтверждение'),
+        (ASSEMBLE, 'В сборке у ресторана'),
+        (COURIER, 'У курьера'),
+        (FULFILLED, 'Выполнен')
+    ]
+    CASH = 'cash'
+    ONLINE = 'online'
+    PAYMENT_METHOD_CHOICES = [
+        (CASH, 'Наличными'),
+        (ONLINE, 'Онлайн')
+    ]
 
     address = models.CharField(
         'Адрес',
@@ -161,17 +206,20 @@ class Order(models.Model):
         'Мобильный номер',
         db_index=True
     )
-    status = models.SmallIntegerField(
+    status = models.CharField(
         'Статус заказа',
-        choices=Status.choices,
-        default=Status.NEW,
+        max_length=50,
+        choices=STATUS_CHOICES,
+        default=NEW,
         db_index=True
     )
-    payment_method = models.SmallIntegerField(
+    payment_method = models.CharField(
         'Способ оплаты',
-        choices=PaymentMethod.choices,
-        default=PaymentMethod.CASH,
-        db_index=True
+        max_length=50,
+        choices=PAYMENT_METHOD_CHOICES,
+        default=CASH,
+        db_index=True,
+        blank=True
     )
     comment = models.TextField(
         'Комментарий',
@@ -195,6 +243,14 @@ class Order(models.Model):
         null=True,
         blank=True,
         db_index=True
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='orders',
+        verbose_name='Ресторан'
     )
 
     class Meta:

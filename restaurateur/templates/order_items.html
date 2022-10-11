@@ -20,18 +20,37 @@
       <th>Клиент</th>
       <th>Телефон</th>
       <th>Адрес доставки</th>
+      <th>Комментарий</th>
+      <th>Ресторан</th>
       <th>Ссылка на админку</th>
     </tr>
 
     {% for item in order_items %}
       <tr>
-        <td>{{  item.id }}</td>
-        <td>{{  item.status }}</td>
-        <td>{{  item.payment_method }}</td>
-        <td>{{  item.price }} Руб.</td>
-        <td>{{  item.client }}</td>
-        <td>{{  item.phonenumber }}</td>
-        <td>{{  item.address }}</td>
+        <td>{{ item.id }}</td>
+        <td>{{ item.status }}</td>
+        <td>{{ item.payment_method }}</td>
+        <td>{{ item.price }} Руб.</td>
+        <td>{{ item.client }}</td>
+        <td>{{ item.phonenumber }}</td>
+        <td>{{ item.address }}</td>
+        <td>{{ item.comment }}</td>
+        <td>
+          {% if item.restaurant %}
+            Готовит: {{ item.restaurant }}
+          {% else %}
+            <details>
+              <summary>Может быть приготовлено:</summary>
+              <ul>
+                {% for restaurant in item.restaurants %}
+                  <li>
+                    {{ restaurant }}
+                  </li>
+                {% endfor %}
+              </ul>
+            </details>
+          {% endif %}
+        </td>
         <td><a href="{% url 'admin:foodcartapp_order_change' object_id=item.id %}?next={{ request.get_full_path|urlencode }}">Редактировать</a></td>
       </tr>
     {% endfor %}

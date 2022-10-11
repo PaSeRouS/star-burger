@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Case, Count, When
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
@@ -93,19 +94,25 @@ def view_restaurants(request):
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     orders_data = []
-    orders = Order.objects.price_sum()
+    orders = Order.objects.price_sum().select_related(
+        'restaurant'
+    ).exclude(status='fulfilled').annotate(
+        relevance=Count(Case(When(status='created', then=1)))
+    ).order_by('-relevance').with_restaurants()
 
     for order in orders:
-        if order.status != 3:
-            orders_data.append({
-                'id': order.id,
-                'price': order.price_total,
-                'client': f'{order.firstname} {order.lastname}',
-                'phonenumber': order.phonenumber,
-                'address': order.address,
-                'status': order.get_status_display(),
-                'payment_method': order.get_payment_method_display()
-            })
+        orders_data.append({
+            'id': order.id,
+            'price': order.price_total,
+            'client': f'{order.firstname} {order.lastname}',
+            'phonenumber': order.phonenumber,
+            'address': order.address,
+            'comment': order.comment,
+            'status': order.get_status_display(),
+            'payment_method': order.get_payment_method_display(),
+            'restaurant': order.restaurant,
+            'restaurants': order.restaurants
+        })
 
     context = {
         'order_items': orders_data
