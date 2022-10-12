@@ -1,3 +1,4 @@
+import copy
 from collections import defaultdict
 
 from django.db import models
@@ -6,6 +7,8 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 from django.utils.translation import gettext_lazy
 from phonenumber_field.modelfields import PhoneNumberField
+
+from .geo_functions import fetch_coordinates, calc_distance
 
 
 class Restaurant(models.Model):
@@ -157,14 +160,28 @@ class OrderQuerySet(models.QuerySet):
             )
 
         for order in orders:
+            order_location = fetch_coordinates(order.address)
+            
             order_restaurants_by_items = [
-                restaurants_by_items[order_item.product.id]
+                copy.deepcopy(restaurants_by_items[order_item.product.id])
                 for order_item in order.items.all()
             ]
             order.restaurants = list(
                 set.intersection(*[
                     set(list) for list in order_restaurants_by_items
                 ])
+            )
+
+            for restaurant in order.restaurants:
+                restaurant_location = fetch_coordinates(restaurant.address)
+                restaurant.distance = calc_distance(
+                    order_location,
+                    restaurant_location
+                )
+
+            order.restaurants = sorted(
+                order.restaurants,
+                key=lambda restaurant: restaurant.distance
             )
 
         return orders
