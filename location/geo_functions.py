@@ -51,7 +51,13 @@ def get_or_create_locations(locations):
             )
 
             locations_with_coords[location] = (lat, lon)
-            new_locations.append(new_location)
+        else:
+            new_location = Location(
+                address=location
+            )
+            locations_with_coords[location] = None
+        
+        new_locations.append(new_location)
 
     if len(new_locations) > 0:
         Location.objects.bulk_create(new_locations)

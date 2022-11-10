@@ -76,9 +76,6 @@ class OrderSerializer(Serializer):
     phonenumber = CharField()
     address = CharField(max_length=100)
 
-    # def create(self, validated_data):
-    #     return Order.objects.create(**validated_data)
-
 
 def banners_list_api(request):
     # FIXME move data to db?
@@ -136,10 +133,12 @@ def product_list_api(request):
 @api_view(['POST'])
 def register_order(request):
     content = {}
+    order_items = []
 
     if request.method == 'POST':
         serializer = OrderDeserializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        order_items = []
 
         order = Order.objects.create(
             address=request.data['address'],
@@ -151,12 +150,16 @@ def register_order(request):
         for order_position in request.data['products']:
             product = Product.objects.get(pk=order_position['product'])
 
-            OrderItem.objects.create(
-                order=order,
-                price=product.price,
-                product=product,
-                quantity=order_position['quantity']
+            order_items.append(
+                OrderItem(
+                    order=order,
+                    price=product.price,
+                    product=product,
+                    quantity=order_position['quantity']
+                )
             )
+
+        OrderItem.objects.bulk_create(order_items)
 
         serializer = OrderSerializer(order)
         content = JSONRenderer().render(serializer.data)

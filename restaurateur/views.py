@@ -94,11 +94,11 @@ def view_restaurants(request):
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     orders_data = []
-    orders = Order.objects.price_sum().select_related(
+    orders = Order.objects.get_price_sum().select_related(
         'restaurant'
     ).exclude(status='fulfilled').annotate(
         relevance=Count(Case(When(status='created', then=1)))
-    ).order_by('-relevance').with_restaurants()
+    ).order_by('-relevance').with_available_restaurants()
 
     for order in orders:
         orders_data.append({

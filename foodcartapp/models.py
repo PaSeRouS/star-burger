@@ -133,11 +133,24 @@ class RestaurantMenuItem(models.Model):
 
 
 class OrderQuerySet(models.QuerySet):
-    def price_sum(self):
+    def get_price_sum(self):
         return self.annotate(price_total=Sum(F('items__price') * F('items__quantity')))
 
 
-    def with_restaurants(self):
+    def get_locations(self, orders, menu_items):
+        order_addresses = [order.address for order in orders]
+
+        restaurant_addresses = [
+            menu_item.restaurant.address
+            for menu_item in menu_items
+        ]
+
+        return get_or_create_locations(
+            [*order_addresses, *restaurant_addresses]
+        )
+
+
+    def with_available_restaurants(self):
         orders = self.prefetch_related(
             Prefetch(
                 'items',
@@ -152,16 +165,7 @@ class OrderQuerySet(models.QuerySet):
             availability=True,
         )
 
-        order_addresses = [order.address for order in orders]
-
-        restaurant_addresses = [
-            menu_item.restaurant.address
-            for menu_item in menu_items
-        ]
-
-        locations = get_or_create_locations(
-            [*order_addresses, *restaurant_addresses]
-        )
+        locations = self.get_locations(orders, menu_items)
 
         restaurants_by_items = defaultdict(list)
 
@@ -199,8 +203,6 @@ class OrderQuerySet(models.QuerySet):
 
 
 class Order(models.Model):
-    objects = OrderQuerySet().as_manager()
-
     NEW = 'new'
     ASSEMBLE = 'assemble'
     COURIER = 'courier'
@@ -245,15 +247,12 @@ class Order(models.Model):
         'Способ оплаты',
         max_length=50,
         choices=PAYMENT_METHOD_CHOICES,
-        default=CASH,
         db_index=True,
         blank=True
     )
     comment = models.TextField(
         'Комментарий',
-        max_length=200,
-        blank=True,
-        null=True
+        blank=True
     )
     registered_at = models.DateTimeField(
         'Создано',
@@ -281,6 +280,8 @@ class Order(models.Model):
         verbose_name='Ресторан'
     )
 
+    objects = OrderQuerySet().as_manager()
+
     class Meta:
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
@@ -300,6 +301,7 @@ class OrderItem(models.Model):
         Product,
         on_delete=models.SET_NULL,
         verbose_name='Товар',
+        related_name='order_items',
         null=True
     )
     price = models.DecimalField(
@@ -309,7 +311,8 @@ class OrderItem(models.Model):
         validators=[MinValueValidator(0)]
     )
     quantity = models.IntegerField(
-        'Количество'
+        'Количество',
+        validators=[MinValueValidator(1)]
     )
 
     class Meta:
