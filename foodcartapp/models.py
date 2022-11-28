@@ -137,13 +137,8 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(price_total=Sum(F('items__price') * F('items__quantity')))
 
 
-    def get_locations(self, orders, menu_items):
+    def get_locations(self, orders, restaurant_addresses):
         order_addresses = [order.address for order in orders]
-
-        restaurant_addresses = [
-            menu_item.restaurant.address
-            for menu_item in menu_items
-        ]
 
         return get_or_create_locations(
             [*order_addresses, *restaurant_addresses]
@@ -165,7 +160,12 @@ class OrderQuerySet(models.QuerySet):
             availability=True,
         )
 
-        locations = self.get_locations(orders, menu_items)
+        restaurant_addresses = [
+            menu_item.restaurant.address
+            for menu_item in menu_items
+        ]
+
+        locations = self.get_locations(orders, restaurant_addresses)
 
         restaurants_by_items = defaultdict(list)
 
