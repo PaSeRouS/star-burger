@@ -95,7 +95,7 @@ def view_restaurants(request):
 def view_orders(request):
     orders_data = []
     orders = Order.objects.get_price_sum().select_related(
-        'restaurant'
+        'cooking_restaurant'
     ).exclude(status='fulfilled').annotate(
         relevance=Count(Case(When(status='created', then=1)))
     ).order_by('-relevance').with_available_restaurants()
@@ -110,7 +110,7 @@ def view_orders(request):
             'comment': order.comment,
             'status': order.get_status_display(),
             'payment_method': order.get_payment_method_display(),
-            'restaurant': order.restaurant,
+            'restaurant': order.cooking_restaurant,
             'restaurants': order.restaurants
         })
 
