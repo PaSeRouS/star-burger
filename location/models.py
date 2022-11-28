@@ -9,10 +9,12 @@ class Location(models.Model):
         unique=True
     )
     lat = models.FloatField(
-        'Ширина'
+        'Ширина',
+        null=True
     )
     lon = models.FloatField(
-        'Долгота'
+        'Долгота',
+        null=True
     )
     date = models.DateField(
         'Дата запроса к Геокодеру',
