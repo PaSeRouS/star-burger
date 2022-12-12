@@ -1,6 +1,7 @@
 django==4.0
 django-debug-toolbar==3.2.1
 django-phonenumber-field==6.1.0
+django-phonenumbers==8.13.2
 djangorestframework==3.13.1
 environs[django]==9.3.2
 geopy==2.2.0
