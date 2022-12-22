@@ -75,6 +75,16 @@ ROLLBAR_ENVIRONMENT=Development (Если разработка)
 ROLLBAR_ENVIRONMENT=Production (Если работаете с продуктивной версией сайта)
 ```
 
+Для установки базы данных пройдите [руководство](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04).
+В файле окружения `.env` добавьте следующие настройки:
+```sh
+DATABASE_NAME=Имя созданной базы данных PostgreSQL
+DATABASE_USER=Имя пользователя, созданного в базе данных PostgreSQL
+DATABASE_PASSWORD=Пароль от созданной базы данных PostgreSQL
+DATABASE_HOST=Адрес базы данных
+DATABASE_PORT=Порт базы данных
+```
+
 Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
 
 ```sh
