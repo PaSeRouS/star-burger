@@ -65,6 +65,16 @@ SECRET_KEY=django-insecure-0if40nf4nf93n4
 YANDEX_API_KEY - Ваш ключ доступа к API Яндекса
 ```
 
+Переменные окружения для отслеживания ошибок сайта:
+Для получения ROLLBAR_ACCESS_TOKEN нужно зарегистрироваться на [сайте](rollbar.com) и выбрать framework Django.
+```sh
+ROLLBAR_ACCESS_TOKEN=ваш секретный ключ rollbar
+
+ROLLBAR_ENVIRONMENT=Development (Если разработка)
+ИЛИ
+ROLLBAR_ENVIRONMENT=Production (Если работаете с продуктивной версией сайта)
+```
+
 Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
 
 ```sh
