@@ -15,7 +15,7 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', True)
 YANDEX_API_KEY = env.str('YANDEX_API_KEY')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost', '45.8.249.236', 'paser-starburger.ml'])
 
 INSTALLED_APPS = [
     'foodcartapp.apps.FoodcartappConfig',
@@ -137,4 +137,8 @@ ROLLBAR = {
     'environment': env.str('ROLLBAR_ENVIRONMENT'),
     'code_version': '1.0',
     'root': BASE_DIR,
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 9639198 (Commit from bash)
