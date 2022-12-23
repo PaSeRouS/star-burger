@@ -137,8 +137,4 @@ ROLLBAR = {
     'environment': env.str('ROLLBAR_ENVIRONMENT'),
     'code_version': '1.0',
     'root': BASE_DIR,
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 9639198 (Commit from bash)
