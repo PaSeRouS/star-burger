@@ -175,7 +175,7 @@ Parcel будет следить за файлами в каталоге `bundle
 - `ALLOWED_HOSTS` — [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
 - `YANDEX_API_KEY` - [руководство](https://dvmn.org/encyclopedia/api-docs/yandex-geocoder-api/) по получению
 
-## Пример сайт
+## Пример сайта
 
 Перейдите на [paser-starburger.ml](https://paser-starburger.ml), чтобы опробовать сайт самостоятельно.
 
